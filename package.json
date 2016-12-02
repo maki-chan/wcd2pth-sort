@@ -1,0 +1,10 @@
+{
+  "name": "wcd2pth-sort",
+  "version": "0.1.0",
+  "description": "Finds releases you had from WCD that aren't on PTH",
+  "productName": "wcd2pth-sort",
+  "scripts": {},
+  "dependencies": {
+    "parse-torrent": "^5.8.1"
+  }
+}
