@@ -1,10 +1,23 @@
 {
   "name": "wcd2pth-sort",
   "version": "0.1.0",
-  "description": "Finds releases you had from WCD that aren't on PTH",
+  "description": "Finds releases you had from WCD that aren't on PTH, and more!",
   "productName": "wcd2pth-sort",
+  "license": "WTFPL",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shurelia/wcd2pth-sort.git"
+  },
+  "author": {
+    "name": "Shurelia",
+    "url": "https://github.com/Shurelia"
+  },
   "scripts": {},
   "dependencies": {
-    "parse-torrent": "^5.8.1"
+    "gazelle-api": "^1.0.0",
+    "html-entities": "^1.2.0",
+    "mv": "^2.1.1",
+    "parse-torrent": "^5.8.1",
+    "readline-sync": "^1.4.5"
   }
 }
