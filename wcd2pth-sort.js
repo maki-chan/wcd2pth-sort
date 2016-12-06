@@ -91,23 +91,28 @@ function searchForReleases(t, cb) {
 }
 
 function makeTorrent(release, trump, cb) {
-  var outPath = (trump == 0) ? 'out/upload' : './out/upload/trump';
-  var outFile = path.join(outPath, release.torrentfile);
-  var inPath = path.join(datadir, release.torrentdata.name);
-  var arg = ['-p', '-s', 'PTH', '-a', config.tracker + config.passkey + '/announce', '-o', entities.decode(outFile), inPath];
-  try {
-    cp.execFile('mktorrent', arg, () => {
-      console.log('Created file ' + outFile);
-      rimraf(path.join(folder, release.torrentfile), (err) => {
-        console.log('Deleted file ' + path.join(folder, release.torrentfile));
-        cb(path.join(__dirname, outFile));
-      });
-    });
-  } catch (err) {
-    console.log(err);
-    console.log("Failed to execute mktorrent");
-    console.log("Is mktorrent on the path?");
+  if (config.upload == 0) {
+    console.log("Upload mode is off. Skipping...")
     cb(null);
+  } else {
+    var outPath = (trump == 0) ? 'out/upload' : './out/upload/trump';
+    var outFile = path.join(outPath, release.torrentfile);
+    var inPath = path.join(datadir, release.torrentdata.name);
+    var arg = ['-p', '-s', 'PTH', '-a', config.tracker + config.passkey + '/announce', '-o', entities.decode(outFile), inPath];
+    try {
+      cp.execFile('mktorrent', arg, () => {
+        console.log('Created file ' + outFile);
+        rimraf(path.join(folder, release.torrentfile), (err) => {
+          console.log('Deleted file ' + path.join(folder, release.torrentfile));
+          cb(path.join(__dirname, outFile));
+        });
+      });
+    } catch (err) {
+      console.log(err);
+      console.log("Failed to execute mktorrent");
+      console.log("Is mktorrent on the path?");
+      cb(null);
+    }
   }
 }
 
@@ -115,45 +120,21 @@ function toUpload(release, gid, tor, cb) {
   var log = '';
   var img = '';
   var tracks = '';
-  findLog(release, (l) => {
-    log = l;
-    findCover(release, (c) => {
-      img = c;
-      findTracks(release, (t) => {
-        tracks = t;
-        writeRow(release.artist, release.album, release.media, gid, tor, log, img, tracks, () => cb());
-      });
-    })
-  });
-}
-
-function writeRow(artist, album, media, gid, tor, log, img, tracks, cb) {
-  var t = (config.linuxToWin == 0) ? path.normalize(tor.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(tor.replace(config.replacePathFrom, config.replacePathTo));
-  if (log != null) {
-    var l = (config.linuxToWin == 0) ? path.normalize(log.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(log.replace(config.replacePathFrom, config.replacePathTo));
-  } else {
-    var l = null;
-  }
-  if (img != null) {
-    var i = (config.linuxToWin == 0) ? path.normalize(img.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(img.replace(config.replacePathFrom, config.replacePathTo));
-  } else {
-    var i = null;
-  }
-  var str = '<div>';
-  str += '<div class=\'artist\' style=\'display: inline-block\'><input type=\'text\' value=\"' + artist + '\"></input></div>';
-  str += '<div class=\'album\' style=\'display: inline-block\'><input type=\'text\' value=\"' + album + '\"></input></div>';
-  str += '<div class=\'media\' style=\'display: inline-block\'><input type=\'text\' value=\"' + media + ' - tracks: ' + tracks + '\"></input></div>';
-  str += '<div class=\'group\' style=\'display: inline-block\'><a href=\'' + config.domain + 'torrents.php?id=' + gid + '\'>' + gid + '</a></div>';
-  str += '<div class=\'tor\' style=\'display: inline-block\'><input type=\'text\' maxlength=\'1000\' value=\"' + t + '\"></input></div>';
-  str += '<div class=\'log\' style=\'display: inline-block\'><input type=\'text\' value=\"' + l + '\"></input></div>';
-  str += '<div class=\'img\' style=\'display: inline-block\'><input type=\'text\' value=\"' + i + '\"></input></div>';
-  str += '</div>'
-  fs.appendFile(path.join(__dirname,'out/upload.html'), str, (err) => {
-    if (err) {
-      console.log(err);
-    }
+  if (config.upload == 0) {
     cb();
-  });
+  }
+  else {
+    findLog(release, (l) => {
+      log = l;
+      findCover(release, (c) => {
+        img = c;
+        findTracks(release, (t) => {
+          tracks = t;
+          writeRow(release.artist, release.album, release.media, gid, tor, log, img, tracks, () => cb());
+        });
+      })
+    });
+  }
 }
 
 function promptTorrentGroups(results, release, cb) {
@@ -214,37 +195,41 @@ function searchForTorrentMatches(group, release, cb) {
       try {
       var r = response.body.response.torrent;
       if(r.fileCount == release.torrentdata.files.length && entities.decode(r.filePath) == entities.decode(release.torrentdata.name) && r.media == release.media) {
-        if (r.logScore < parseInt(100, 10) && r.media == "CD") {
-          if (config.trump == 0) {
-            console.log("Matching release found with " + r.logScore + "% log, but trump mode not enabled.");
-            cb(1);
+        findExactMatches(release.torrentdata.files, r.fileList, release.torrentdata.name, r.filePath, (c) => {
+          if (c == 1) {
+            console.log("This torrent exists already at torrent ID: " + r.id + ". Downloading to ./out/download")
+            try {
+              pth.download(r.id, './out/download').then(rimraf(path.join(folder, release.torrentfile), (err) => {
+                console.log('Deleted file ' + path.join(folder, release.torrentfile));
+                cb(1);
+              }));
+            } catch (err) {
+              console.log(err)
+              setTimeout(cb(1), 3000);
+            }
           } else {
-            var msg = [];
-            msg.push("This torrent exists at torrent ID " + r.id + ", but with a " + r.logScore + "% log. Trump?");
-            msg.push("[1] Yes");
-            msg.push("[2] No");
-            var selected = promptSelection([0, 1], msg);
-            if (selected == 0) {
-              console.log("Making torrent to trump torrent ID " + r.id +"...")
-              makeTorrent(release, 1, () => cb(1))
-            } else {
-              console.log("Not trumping.")
-              cb(1);
+            if (r.logScore < parseInt(100, 10) && r.media == "CD") {
+              if (config.trump == 0) {
+                console.log("Trumpable release found with " + r.logScore + "% log, but trump mode not enabled.");
+                cb(1);
+              } else {
+                var msg = [];
+                msg.push("This torrent exists at torrent ID " + r.id + ", but with a " + r.logScore + "% log. Trump?");
+                msg.push("[1] Yes");
+                msg.push("[2] No");
+                var selected = promptSelection([0, 1], msg);
+                if (selected == 0) {
+                  console.log("Making torrent to trump torrent ID " + r.id +"...")
+                  makeTorrent(release, 1, () => cb(1))
+                } else {
+                  console.log("Not trumping.")
+                  cb(1);
+                }
+              }
             }
           }
-        } else {
-          console.log("This torrent exists already at torrent ID: " + r.id + ". Downloading to ./out/download")
-          try {
-            pth.download(r.id, './out/download').then(rimraf(path.join(folder, release.torrentfile), (err) => {
-              console.log('Deleted file ' + path.join(folder, release.torrentfile));
-              cb(1);
-            }));
-          } catch (err) {
-            console.log(err)
-            setTimeout(cb(1), 3000);
-          }
-        }
-      } else if(r.fileCount == release.torrentdata.files.length && r.media == release.media) {
+        });
+      } else if (r.fileCount == release.torrentdata.files.length && r.media == release.media) {
         console.log("Possible match found, folder names do not match though. Investigating...")
         findExactMatches(release.torrentdata.files, r.fileList, release.torrentdata.name, r.filePath, (c) => {
           if (c == 0) {
@@ -260,7 +245,6 @@ function searchForTorrentMatches(group, release, cb) {
               console.log(err)
               setTimeout(cb(1), 3000);
             }
-
           }
         });
       } else { cb(0) }
@@ -288,19 +272,23 @@ function findExactMatches(local, remote, localfolder, remoteFolder, cb) {
     }
   }
   if (matches == a.length) {
-    msg = [];
-    msg.push("Exact match found! Only folder names differ.")
-    if (config.renameFolders == 1) {
-      mv(path.join(datadir, localfolder), path.join(datadir, entities.decode(remoteFolder)), (err) => {
-        if (err) {
-          console.log(err);
-        }
-        console.log("Renaming folder from "+localfolder+" to "+remoteFolder+" and downloading torrent file.");
-        cb(1);
-      });
+    if (localfolder == remoteFolder) {
+      cb(1);
     } else {
-      console.log("renameFolders is 0. Doing nothing.")
-      cb(0);
+      msg = [];
+      msg.push("Exact match found! Only folder names differ.")
+      if (config.renameFolders == 1) {
+        mv(path.join(datadir, localfolder), path.join(datadir, entities.decode(remoteFolder)), (err) => {
+          if (err) {
+            console.log(err);
+          }
+          console.log("Renaming folder from "+localfolder+" to "+remoteFolder+" and downloading torrent file.");
+          cb(1);
+        });
+      } else {
+        console.log("renameFolders is 0. Doing nothing.")
+        cb(0);
+      }
     }
   } else {
     console.log("Not an exact match.")
@@ -401,6 +389,35 @@ function Release(arr, filename) {
   } catch (err) {
     console.log(err);
   }
+}
+
+function writeRow(artist, album, media, gid, tor, log, img, tracks, cb) {
+  var t = (config.linuxToWin == 0) ? path.normalize(tor.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(tor.replace(config.replacePathFrom, config.replacePathTo));
+  if (log != null) {
+    var l = (config.linuxToWin == 0) ? path.normalize(log.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(log.replace(config.replacePathFrom, config.replacePathTo));
+  } else {
+    var l = null;
+  }
+  if (img != null) {
+    var i = (config.linuxToWin == 0) ? path.normalize(img.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(img.replace(config.replacePathFrom, config.replacePathTo));
+  } else {
+    var i = null;
+  }
+  var str = '<div>';
+  str += '<div class=\'artist\' style=\'display: inline-block\'><input type=\'text\' value=\"' + artist + '\"></input></div>';
+  str += '<div class=\'album\' style=\'display: inline-block\'><input type=\'text\' value=\"' + album + '\"></input></div>';
+  str += '<div class=\'media\' style=\'display: inline-block\'><input type=\'text\' value=\"' + media + ' - tracks: ' + tracks + '\"></input></div>';
+  str += '<div class=\'group\' style=\'display: inline-block\'><a href=\'' + config.domain + 'torrents.php?id=' + gid + '\'>' + gid + '</a></div>';
+  str += '<div class=\'tor\' style=\'display: inline-block\'><input type=\'text\' maxlength=\'1000\' value=\"' + t + '\"></input></div>';
+  str += '<div class=\'log\' style=\'display: inline-block\'><input type=\'text\' value=\"' + l + '\"></input></div>';
+  str += '<div class=\'img\' style=\'display: inline-block\'><input type=\'text\' value=\"' + i + '\"></input></div>';
+  str += '</div>'
+  fs.appendFile(path.join(__dirname,'out/upload.html'), str, (err) => {
+    if (err) {
+      console.log(err);
+    }
+    cb();
+  });
 }
 
 function writeHead() {
