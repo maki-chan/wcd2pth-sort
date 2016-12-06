@@ -11,5 +11,7 @@
   "linuxToWin": 0,
   "trump": 0,
   "upload": 0,
+  "download": 0,
+  "prompt": 1,
   "renameFolders": 0
 }

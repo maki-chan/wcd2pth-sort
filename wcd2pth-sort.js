@@ -5,6 +5,7 @@ const Gazelle = require('gazelle-api');
 const parseTorrent = require('parse-torrent');
 const cp = require('child_process');
 const mv = require('mv');
+const imgur = require('imgur-node-api');
 const rimraf = require('rimraf');
 const Entities = require('html-entities').AllHtmlEntities;
 const entities = new Entities();
@@ -14,6 +15,7 @@ const folder = config.torrentfolder;
 const datadir = config.musicfolder;
 const re = /(.*?) - (.*?) - (.*?) \((.*?) - (.*?) - (.*?)\).*?.torrent/;
 var si = 0
+imgur.setClientID('529f3070cdcec04');
 
 makeDir();
 if (!fs.existsSync(path.join(__dirname, 'out/upload.html'))) {
@@ -127,12 +129,23 @@ function toUpload(release, gid, tor, cb) {
     findLog(release, (l) => {
       log = l;
       findCover(release, (c) => {
-        img = c;
-        findTracks(release, (t) => {
-          tracks = t;
-          writeRow(release.artist, release.album, release.media, gid, tor, log, img, tracks, () => cb());
-        });
-      })
+        if (c == null || c == 'null' || c == undefined) {
+          img == 'null';
+          findTracks(release, (t) => {
+            tracks = t;
+            writeRow(release.artist, release.album, release.media, gid, tor, log, img, tracks, release.year, () => cb());
+          });
+        } else {
+          imgur.upload(c, (err, res) => {
+            if (res) { img = res.data.link; }
+            console.log(res.data)
+            findTracks(release, (t) => {
+              tracks = t;
+              writeRow(release.artist, release.album, release.media, gid, tor, log, img, tracks, release.year, () => cb());
+            });
+          });
+        }
+      });
     });
   }
 }
@@ -180,7 +193,7 @@ function getTorrentsFromID(flacTorrents, gid, release, index, cb) {
       }
     });
   } else {
-    console.log("No matches found in this torrent group. Making a new torrent.")
+    console.log("No matches found in this torrent group. Making a new torrent.");
     makeTorrent(release, 0, (tor) => {
       toUpload(release, gid, tor, () => cb())
     });
@@ -207,7 +220,7 @@ function searchForTorrentMatches(group, release, cb) {
               console.log(err)
               setTimeout(cb(1), 3000);
             }
-          } else {
+          } else if (c == 0) {
             if (r.logScore < parseInt(100, 10) && r.media == "CD") {
               if (config.trump == 0) {
                 console.log("Trumpable release found with " + r.logScore + "% log, but trump mode not enabled.");
@@ -226,14 +239,19 @@ function searchForTorrentMatches(group, release, cb) {
                   cb(1);
                 }
               }
-            }
+            } else {cb(0);}
+          } else if (c == -1) {
+            rimraf(path.join(folder, release.torrentfile), (err) => {
+              console.log('Deleted file ' + path.join(folder, release.torrentfile));
+              cb(1);
+            });
           }
         });
       } else if (r.fileCount == release.torrentdata.files.length && r.media == release.media) {
         console.log("Possible match found, folder names do not match though. Investigating...")
         findExactMatches(release.torrentdata.files, r.fileList, release.torrentdata.name, r.filePath, (c) => {
           if (c == 0) {
-            cb(0)
+            cb(1)
           } else {
             try {
               pth.download(r.id, './out/download').then(rimraf(path.join(folder, release.torrentfile), (err) => {
@@ -250,6 +268,7 @@ function searchForTorrentMatches(group, release, cb) {
       } else { cb(0) }
     } catch (err) {
       console.log(err);
+      cb(0);
     }});
   } catch (err) {
     console.log("Error sending API request. Skipping.");
@@ -258,41 +277,46 @@ function searchForTorrentMatches(group, release, cb) {
 }
 
 function findExactMatches(local, remote, localfolder, remoteFolder, cb) {
-  var a = remote.replace(/}}}/g, '').split("|||");
-  var matches = 0;
-  for (var i = 0; i < a.length; i++) {
-    a[i] = entities.decode(a[i]);
-    a[i] = a[i].split("\{\{\{");
-  }
-  for (var i = 0; i < local.length; i++) {
-    for (var k = 0; k < a.length; k++) {
-      if (a[k][0] == local[i].name && a[k][1] == local[i].length) {
-        matches++;
-      }
-    }
-  }
-  if (matches == a.length) {
-    if (localfolder == remoteFolder) {
-      cb(1);
-    } else {
-      msg = [];
-      msg.push("Exact match found! Only folder names differ.")
-      if (config.renameFolders == 1) {
-        mv(path.join(datadir, localfolder), path.join(datadir, entities.decode(remoteFolder)), (err) => {
-          if (err) {
-            console.log(err);
-          }
-          console.log("Renaming folder from "+localfolder+" to "+remoteFolder+" and downloading torrent file.");
-          cb(1);
-        });
-      } else {
-        console.log("renameFolders is 0. Doing nothing.")
-        cb(0);
-      }
-    }
+  if (config.download == 0) {
+    console.log("Downloading is turned off. Skipping.")
+    cb(-1);
   } else {
-    console.log("Not an exact match.")
-    cb(0);
+    var a = remote.replace(/}}}/g, '').split("|||");
+    var matches = 0;
+    for (var i = 0; i < a.length; i++) {
+      a[i] = entities.decode(a[i]);
+      a[i] = a[i].split("\{\{\{");
+    }
+    for (var i = 0; i < local.length; i++) {
+      for (var k = 0; k < a.length; k++) {
+        if (a[k][0] == local[i].name && a[k][1] == local[i].length) {
+          matches++;
+        }
+      }
+    }
+    if (matches == a.length) {
+      if (localfolder == remoteFolder) {
+        cb(1);
+      } else {
+        msg = [];
+        msg.push("Exact match found! Only folder names differ.")
+        if (config.renameFolders == 1) {
+          mv(path.join(datadir, localfolder), path.join(datadir, entities.decode(remoteFolder)), (err) => {
+            if (err) {
+              console.log(err);
+            }
+            console.log("Renaming folder from "+localfolder+" to "+remoteFolder+" and downloading torrent file.");
+            cb(1);
+          });
+        } else {
+          console.log("renameFolders is 0. Doing nothing.")
+          cb(0);
+        }
+      }
+    } else {
+      console.log("Not an exact match.")
+      cb(0);
+    }
   }
 }
 
@@ -361,6 +385,7 @@ function filterFLAC(arr) {
 }
 
 function promptSelection (arr, msg) {
+  if (config.prompt == 0) { return 0; }
   for (var i = 0, l = msg.length; i < l; i++) {
     console.log(msg[i]);
   }
@@ -391,26 +416,21 @@ function Release(arr, filename) {
   }
 }
 
-function writeRow(artist, album, media, gid, tor, log, img, tracks, cb) {
+function writeRow(artist, album, media, gid, tor, log, img, tracks, year, cb) {
   var t = (config.linuxToWin == 0) ? path.normalize(tor.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(tor.replace(config.replacePathFrom, config.replacePathTo));
   if (log != null) {
     var l = (config.linuxToWin == 0) ? path.normalize(log.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(log.replace(config.replacePathFrom, config.replacePathTo));
   } else {
     var l = null;
   }
-  if (img != null) {
-    var i = (config.linuxToWin == 0) ? path.normalize(img.replace(config.replacePathFrom, config.replacePathTo)) : path.win32.normalize(img.replace(config.replacePathFrom, config.replacePathTo));
-  } else {
-    var i = null;
-  }
   var str = '<div>';
   str += '<div class=\'artist\' style=\'display: inline-block\'><input type=\'text\' value=\"' + artist + '\"></input></div>';
   str += '<div class=\'album\' style=\'display: inline-block\'><input type=\'text\' value=\"' + album + '\"></input></div>';
-  str += '<div class=\'media\' style=\'display: inline-block\'><input type=\'text\' value=\"' + media + ' - tracks: ' + tracks + '\"></input></div>';
+  str += '<div class=\'media\' style=\'display: inline-block\'><input type=\'text\' value=\"' + media + ' - ' + year + ' - ' + tracks + '\"></input></div>';
   str += '<div class=\'group\' style=\'display: inline-block\'><a href=\'' + config.domain + 'torrents.php?id=' + gid + '\'>' + gid + '</a></div>';
   str += '<div class=\'tor\' style=\'display: inline-block\'><input type=\'text\' maxlength=\'1000\' value=\"' + t + '\"></input></div>';
   str += '<div class=\'log\' style=\'display: inline-block\'><input type=\'text\' value=\"' + l + '\"></input></div>';
-  str += '<div class=\'img\' style=\'display: inline-block\'><input type=\'text\' value=\"' + i + '\"></input></div>';
+  str += '<div class=\'img\' style=\'display: inline-block\'><input type=\'text\' value=\"' + img + '\"></input></div>';
   str += '</div>'
   fs.appendFile(path.join(__dirname,'out/upload.html'), str, (err) => {
     if (err) {
@@ -425,5 +445,5 @@ function writeHead() {
   str += '.group{width: 80px;}'
   str += '</style><head><body>'
   fs.writeFileSync(path.join(__dirname, 'out/upload.html'), str);
-  writeRow('Artist','Album','Media','Group','Torrent File','Log File','Image', 'x', () => {});
+  writeRow('Artist','Album','Media - Year - Tracks','Group','Torrent File','Log File','Image', 'x', '20xx', () => {});
 }

@@ -14,8 +14,10 @@
   },
   "scripts": {},
   "dependencies": {
+    "entities": "^1.1.1",
     "gazelle-api": "^1.0.0",
     "html-entities": "^1.2.0",
+    "imgur-node-api": "^0.1.0",
     "mv": "^2.1.1",
     "parse-torrent": "^5.8.1",
     "readline-sync": "^1.4.5"
