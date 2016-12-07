@@ -13,5 +13,6 @@
   "upload": 0,
   "download": 0,
   "prompt": 1,
-  "renameFolders": 0
+  "renameFolders": 0,
+  "imgurapi": ""
 }

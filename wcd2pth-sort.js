@@ -15,7 +15,9 @@ const folder = config.torrentfolder;
 const datadir = config.musicfolder;
 const re = /(.*?) - (.*?) - (.*?) \((.*?) - (.*?) - (.*?)\).*?.torrent/;
 var si = 0
-imgur.setClientID('529f3070cdcec04');
+if (config.imgurapi != "") {
+  imgur.setClientID(config.imgurapi);
+}
 
 makeDir();
 if (!fs.existsSync(path.join(__dirname, 'out/upload.html'))) {
@@ -136,9 +138,9 @@ function toUpload(release, gid, tor, cb) {
             writeRow(release.artist, release.album, release.media, gid, tor, log, img, tracks, release.year, () => cb());
           });
         } else {
-          imgur.upload(c, (err, res) => {
-            if (res) { img = res.data.link; }
-            console.log(res.data)
+          imgurUpload(c, (i) => {
+            img = i;
+            console.log(i);
             findTracks(release, (t) => {
               tracks = t;
               writeRow(release.artist, release.album, release.media, gid, tor, log, img, tracks, release.year, () => cb());
@@ -146,6 +148,22 @@ function toUpload(release, gid, tor, cb) {
           });
         }
       });
+    });
+  }
+}
+
+function imgurUpload(image, cb) {
+  if (config.imgurapi == "") {
+    cb(image);
+  } else {
+    imgur.upload(image, (err, res) => {
+      if (res.data == undefined || res.data.link == undefined) {
+        console.log("Imgur rate limiting reached, trying again in 10 minutes.");
+        console.log(res.data)
+        setTimeout(() => {imgurUpload(image, (i) => cb(i));}, 600000);
+      } else {
+        cb(res.data.link);
+      }
     });
   }
 }
@@ -385,7 +403,7 @@ function filterFLAC(arr) {
 }
 
 function promptSelection (arr, msg) {
-  if (config.prompt == 0) { return 0; }
+  if (config.prompt == 0) { return -1; }
   for (var i = 0, l = msg.length; i < l; i++) {
     console.log(msg[i]);
   }
