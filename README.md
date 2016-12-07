@@ -28,20 +28,35 @@ First, *__MAKE A COPY OF YOUR WCD TORRENT FOLDER!__*
 
 Then open up config.json and fill it out.  
 `"username":` string: PTH username.  
+
 `"password":` string: PTH password.  
+
 `"domain":` string: Do not change.  
+
 `"tracker":` string: Do not change.  
+
 `"passkey":` string: You personal announce passkey, from your user profile.  
+
 `"torrentfolder":` string: The folder path with all your wcd torrents in it. You made a copy, right?  
+
 `"musicfolder":` string: Your music folder path.  
+
 `"replacePathFrom":` string: Original path to be replaced by replacePathTo in the final output. Can be left blank.  
+
 `"replacePathTo":` string: Substring that gets replaced by replacePathFrom. Can be left blank. Useful if you're running this script from a machine different than the one you will be uploading from. e.g. turns /mnt/drive1 into D:\  
+
 `"linuxToWin":` int: Are you running this script on linux, but doing your uploading on windows? 1, otherwise 0  
+
 `"trump":` int: Not yet implemented. Leave as 0.  
+
 `"upload":` int: Want the script to try and find things to upload, and generate an *incredibly robust* html file? 1, otherwise 0  
+
 `"download":` int: Want the script to try and find things that already exist on PTH, and download them? 1, otherwise 0  
+
 `"prompt":` int: 1 prompts the user anytime the script is unsure about anything. 0 errs on the side of the torrent file not existing on the site, and adds it to the upload list for you to look at. Setting this as 0 not recommended with download == 1, as you'll miss out on things you can re-seed!  
+
 `"renameFolders":` int: If the script finds a torrent on PTH that has the exact same files, but the folder name has been changed, 1 changes the folder name to match the folder name of the torrent on PTH for easier reseeding. 0 disallows this script from modifying anything in your musicfolder.  
+
 `"imgurapi":` string: Imgur api key. If set, the script uses this api key to convert the local file paths of all images to imgur urls in upload.html, for less manual labor. Note that imgur has an hourly limit of 50 uploads per IP. This will significantly slow down the script, but ~~is useful if you have download and prompt set to 0 and just want to let it run overnight.~~ Imgur also imposes a daily limit on uploads, which I hit pretty quickly. Leaving this blank is recommended, but I won't remove it.
 
 After your config has been filled out, simply run `node wcd2pth-sort.js`.  
