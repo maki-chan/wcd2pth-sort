@@ -3,7 +3,7 @@ This script finds FLAC releases uploaded to PTH that match releases you snatched
 This script also finds FLAC releases you've snatched from WCD that don't yet exist on PTH, and compiles the metadata, torrent file, log file, and image into a list for easier uploading.  
 It accomplishes this by using the original torrents you snatched from WCD and comparing them against the torrents on PTH, which means you need to have kept your torrent files.  
 
-This script does NOT automate uploading in any way.
+This script does NOT automate uploading in any way.  
 This script also only cares about FLAC releases, and ignores all others.
 
 Support for finding trumpable torrents coming ~~soon~~ maybe.
