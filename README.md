@@ -10,7 +10,8 @@ Support for finding trumpable torrents coming ~~soon~~ maybe.
 
 ## Requirements
 
-+ NodeJS.
++ NodeJS
++ mktorrent
 + Your torrent files from WCD, with their original names (in the format of `Artist - Album - Year (Media - Format - Lossless).*?.torrent`). So unfortunately, only torrents snatched post-2012 will be checked.
 + Your music folders can not have been renamed since you snatched them from WCD.
 
