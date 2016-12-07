@@ -140,7 +140,6 @@ function toUpload(release, gid, tor, cb) {
         } else {
           imgurUpload(c, (i) => {
             img = i;
-            console.log(i);
             findTracks(release, (t) => {
               tracks = t;
               writeRow(release.artist, release.album, release.media, gid, tor, log, img, tracks, release.year, () => cb());
@@ -159,7 +158,6 @@ function imgurUpload(image, cb) {
     imgur.upload(image, (err, res) => {
       if (res.data == undefined || res.data.link == undefined) {
         console.log("Imgur rate limiting reached, trying again in 10 minutes.");
-        console.log(res.data)
         setTimeout(() => {imgurUpload(image, (i) => cb(i));}, 600000);
       } else {
         cb(res.data.link);
@@ -183,14 +181,14 @@ function promptTorrentGroups(results, release, cb) {
     selected = 0;
   }
   if (selected == -1) {
-    console.log("No torrent group exists for this torrent, making a new torrent.")
+    console.log("No torrent group exists for " + release.artist + " - " + release.album + ", making a new torrent.")
     makeTorrent(release, 0, (tor) => {
       toUpload(release, null, tor, () => cb())
     });
   } else {
     var flacTorrents = filterFLAC(results[selected].torrents);
     if (flacTorrents.length == 0) {
-      console.log("No FLAC releases for this torrent group found, making torrent.");
+      console.log("No FLAC releases for " + release.artist + " - " + release.album + ", making torrent.");
       makeTorrent(release, 0, (tor) => {
         toUpload(release, results[selected].groupId, tor, () => cb())
       });
@@ -211,7 +209,7 @@ function getTorrentsFromID(flacTorrents, gid, release, index, cb) {
       }
     });
   } else {
-    console.log("No matches found in this torrent group. Making a new torrent.");
+    console.log("No matches found in the torrent group for " + release.artist + " - " + release.album + ". Making a new torrent.");
     makeTorrent(release, 0, (tor) => {
       toUpload(release, gid, tor, () => cb())
     });
@@ -228,7 +226,7 @@ function searchForTorrentMatches(group, release, cb) {
       if(r.fileCount == release.torrentdata.files.length && entities.decode(r.filePath) == entities.decode(release.torrentdata.name) && r.media == release.media) {
         findExactMatches(release.torrentdata.files, r.fileList, release.torrentdata.name, r.filePath, (c) => {
           if (c == 1) {
-            console.log("This torrent exists already at torrent ID: " + r.id + ". Downloading to ./out/download")
+            console.log(release.artist + " - " + release.album + " exists already at torrent ID: " + r.id + ". Downloading to ./out/download")
             try {
               pth.download(r.id, './out/download').then(rimraf(path.join(folder, release.torrentfile), (err) => {
                 console.log('Deleted file ' + path.join(folder, release.torrentfile));
@@ -245,7 +243,7 @@ function searchForTorrentMatches(group, release, cb) {
                 cb(1);
               } else {
                 var msg = [];
-                msg.push("This torrent exists at torrent ID " + r.id + ", but with a " + r.logScore + "% log. Trump?");
+                msg.push(release.artist + " - " + release.album + " exists at torrent ID " + r.id + ", but with a " + r.logScore + "% log. Trump?");
                 msg.push("[1] Yes");
                 msg.push("[2] No");
                 var selected = promptSelection([0, 1], msg);
