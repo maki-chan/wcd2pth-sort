@@ -14,5 +14,6 @@
   "download": 0,
   "prompt": 1,
   "renameFolders": 0,
-  "imgurapi": ""
+  "imgurapi": "",
+  "sFlag": 0
 }

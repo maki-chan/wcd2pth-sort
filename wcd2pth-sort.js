@@ -14,7 +14,8 @@ const pth = new Gazelle(config.username, config.password, config.domain);
 const folder = config.torrentfolder;
 const datadir = config.musicfolder;
 const re = /(.*?) - (.*?) - (.*?) \((.*?) - (.*?) - (.*?)\).*?.torrent/;
-var si = 0
+var si = 0;
+
 if (config.imgurapi != "") {
   imgur.setClientID(config.imgurapi);
 }
@@ -102,9 +103,12 @@ function makeTorrent(release, trump, cb) {
     var outPath = (trump == 0) ? 'out/upload' : './out/upload/trump';
     var outFile = path.join(outPath, release.torrentfile);
     var inPath = path.join(datadir, release.torrentdata.name);
-    var arg = ['-p', '-s', 'PTH', '-a', config.tracker + config.passkey + '/announce', '-o', entities.decode(outFile), inPath];
+    var arg = (config.sFlag == 1) ? ['-p', '-s', 'PTH', '-a', config.tracker + config.passkey + '/announce', '-o', entities.decode(outFile), inPath] : ['-p', '-a', config.tracker + config.passkey + '/announce', '-o', entities.decode(outFile), inPath];
     try {
-      cp.execFile('mktorrent', arg, () => {
+      cp.execFile('mktorrent', arg, (err, stdout, stderr) => {
+        if (err) {
+          console.log(err);
+        }
         console.log('Created file ' + outFile);
         rimraf(path.join(folder, release.torrentfile), (err) => {
           console.log('Deleted file ' + path.join(folder, release.torrentfile));
