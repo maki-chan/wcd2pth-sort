@@ -59,7 +59,9 @@ Then open up config.json and fill it out.
 
 `"renameFolders":` int: If the script finds a torrent on PTH that has the exact same files, but the folder name has been changed, 1 changes the folder name to match the folder name of the torrent on PTH for easier reseeding. 0 disallows this script from modifying anything in your musicfolder.  
 
-`"imgurapi":` string: Imgur api key. If set, the script uses this api key to convert the local file paths of all images to imgur urls in upload.html, for less manual labor. Note that imgur has an hourly limit of 50 uploads per IP. This will significantly slow down the script, but ~~is useful if you have download and prompt set to 0 and just want to let it run overnight.~~ Imgur also imposes a daily limit on uploads, which I hit pretty quickly. Leaving this blank is recommended, but I won't remove it.
+`"imgurapi":` string: Imgur api key. If set, the script uses this api key to convert the local file paths of all images to imgur urls in upload.html, for less manual labor. Note that imgur has an hourly limit of 50 uploads per IP. This will significantly slow down the script, but ~~is useful if you have download and prompt set to 0 and just want to let it run overnight.~~ Imgur also imposes a daily limit on uploads, which I hit pretty quickly. Leaving this blank is recommended, but I won't remove it.  
+
+`"sFlag":` int: Does your version of mktorrent support the -s flag? 1 if yes, 0 if no or unsure.
 
 After your config has been filled out, simply run `node wcd2pth-sort.js`.  
 If prompt is 1, you will be prompted to answer questions. Entering 0 is always a safe default answer.  
