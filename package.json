@@ -20,6 +20,7 @@
     "imgur-node-api": "^0.1.0",
     "mv": "^2.1.1",
     "parse-torrent": "^5.8.1",
-    "readline-sync": "^1.4.5"
+    "readline-sync": "^1.4.5",
+    "rimraf": "^2.5.4"
   }
 }
