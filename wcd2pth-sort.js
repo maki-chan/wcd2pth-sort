@@ -271,7 +271,7 @@ function searchForTorrentMatches(group, release, cb) {
         console.log("Possible match found, folder names do not match though. Investigating...")
         findExactMatches(release.torrentdata.files, r.fileList, release.torrentdata.name, r.filePath, (c) => {
           if (c == 0) {
-            cb(1)
+            cb(0)
           } else {
             try {
               pth.download(r.id, './out/download').then(rimraf(path.join(folder, release.torrentfile), (err) => {
@@ -330,7 +330,7 @@ function findExactMatches(local, remote, localfolder, remoteFolder, cb) {
           });
         } else {
           console.log("renameFolders is 0. Doing nothing.")
-          cb(0);
+          cb(1);
         }
       }
     } else {
