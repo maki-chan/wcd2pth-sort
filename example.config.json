@@ -1,0 +1,20 @@
+{
+  "username": "Shurelia",
+  "password": "notmyrealpasswordunerd",
+  "domain": "https://passtheheadphones.me/",
+  "tracker": "https://please.passtheheadphones.me/",
+  "passkey": "qwertyuiopasdfghjklzxcvbnmm1234567890",
+  "torrentfolder": "/home/shurelia/watchfolder/music_torrents",
+  "musicfolder": "/home/shurelia/music",
+  "moveMusicTo": "/home/shurelia/music_to_seed",
+  "replacePathFrom": "",
+  "replacePathTo": "",
+  "linuxToWin": 0,
+  "trump": 0,
+  "upload": 1,
+  "download": 1,
+  "prompt": 1,
+  "renameFolders": 1,
+  "imgurapi": "",
+  "sFlag": 0
+}
