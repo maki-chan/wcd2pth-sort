@@ -43,6 +43,8 @@ Then open up config.json and fill it out.
 
 `"musicfolder":` string: Your music folder path.  
 
+`"moveMusicTo":` string: A path to move the files corresponding to any downloaded torrents to. Useful for sorting out what the script found, and what it missed. Optional. Requires download = 1.  
+
 `"replacePathFrom":` string: Original path to be replaced by replacePathTo in the final output. Can be left blank.  
 
 `"replacePathTo":` string: Substring that gets replaced by replacePathFrom. Can be left blank. Useful if you're running this script from a machine different than the one you will be uploading from. e.g. turns /mnt/drive1 into D:\  
