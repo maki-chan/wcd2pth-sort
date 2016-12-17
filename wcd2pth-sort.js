@@ -9,7 +9,7 @@ const imgur = require('imgur-node-api');
 const rimraf = require('rimraf');
 const Entities = require('html-entities').AllHtmlEntities;
 const entities = new Entities();
-const config = require('./config.json');
+const config = require('./my.config.json');
 const pth = new Gazelle(config.username, config.password, config.domain);
 const folder = config.torrentfolder;
 const datadir = config.musicfolder;
@@ -68,7 +68,7 @@ function matchTorrents (arr) {
         }
       }
     } catch (err) {
-      //console.log(arr[i]+' is an invalid torrent file');
+      console.log(arr[i]+' is an invalid torrent file, skipping...');
     }
   }
   return a;
@@ -234,8 +234,20 @@ function searchForTorrentMatches(group, release, cb) {
             try {
               pth.download(r.id, './out/download').then(rimraf(path.join(folder, release.torrentfile), (err) => {
                 console.log('Deleted file ' + path.join(folder, release.torrentfile));
-                cb(1);
-              }));
+              })).then(() => {
+                if (config.moveMusicTo != '') {
+                  mv(path.join(datadir, release.torrentdata.name), path.join(config.moveMusicTo, release.torrentdata.name), {mkdirp: true}, (err) => {
+                    if (err) {
+                      console.log(err);
+                    } else {
+                      console.log('Moved data in', release.torrentdata.name, 'to', config.moveMusicTo);
+                    }
+                    cb(1);
+                  });
+                } else {
+                  cb(1);
+                }
+            });
             } catch (err) {
               console.log(err)
               setTimeout(cb(1), 3000);
@@ -276,8 +288,20 @@ function searchForTorrentMatches(group, release, cb) {
             try {
               pth.download(r.id, './out/download').then(rimraf(path.join(folder, release.torrentfile), (err) => {
                 console.log('Deleted file ' + path.join(folder, release.torrentfile));
-                cb(1);
-              }));
+              })).then(() => {
+                if (config.moveMusicTo != '') {
+                  mv(path.join(datadir, release.torrentdata.name), path.join(config.moveMusicTo, release.torrentdata.name), {mkdirp: true}, (err) => {
+                    if (err) {
+                      console.log(err);
+                    } else {
+                      console.log('Moved data in', release.torrentdata.name, 'to', config.moveMusicTo);
+                    }
+                    cb(1);
+                  });
+                } else {
+                  cb(1);
+                }
+              });
             }
             catch (err) {
               console.log(err)

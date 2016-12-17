@@ -6,6 +6,7 @@
   "passkey": "",
   "torrentfolder": "",
   "musicfolder": "",
+  "moveMusicTo": "",
   "replacePathFrom": "",
   "replacePathTo": "",
   "linuxToWin": 0,
